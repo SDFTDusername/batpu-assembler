@@ -1,10 +1,10 @@
 use crate::assembler::assembler_config::AssemblerConfig;
 use crate::assembler::assembler_error::AssemblerError;
+use crate::assembly::address::Address;
 use crate::assembly::condition::Condition;
 use crate::assembly::immediate::Immediate;
 use crate::assembly::instruction::Instruction;
 use crate::assembly::location::Location;
-use crate::assembly::location::Location::{Address, Label};
 use crate::assembly::offset::Offset;
 use crate::assembly::register::Register;
 use std::collections::HashMap;
@@ -321,8 +321,8 @@ impl Assembler {
             }
         }
 
-        if self.instructions.len() > 4095 {
-            errors.push(AssemblerError::new("Program reached maximum size (4096 instructions)".to_string(), 0).into());
+        if self.instructions.len() > 1023 {
+            errors.push(AssemblerError::new("Program reached maximum size (1024 instructions)".to_string(), 0).into());
             return Err(errors);
         }
 
@@ -331,7 +331,11 @@ impl Assembler {
         }
 
         if self.config.print_info {
-            println!("{} out of 4096 instructions used ({:.1}%)", self.instructions.len(), self.instructions.len() as f64 * 100.0 / 4096.0);
+            println!(
+                "{} out of 1024 instructions used ({:.1}%)",
+                self.instructions.len(),
+                self.instructions.len() as f64 * 100.0 / 1024.0
+            );
         }
 
         Ok(())
@@ -505,14 +509,14 @@ impl Assembler {
         let result = Self::parse_usize(location);
         match result {
             Ok(num) => {
-                if num > 4095 {
-                    return Err(AssemblerError::new(format!("Address {} out of range, expected 0-4095", num), self.line).into());
+                if num > 1023 {
+                    return Err(AssemblerError::new(format!("Address {} out of range, expected 0-1023", num), self.line).into());
                 }
 
-                Ok(Address(num))
+                Ok(Location::Address(Address::new(num as u16)))
             }
             Err(_) => {
-                Ok(Label(location.to_string()))
+                Ok(Location::Label(location.to_string()))
             }
         }
     }

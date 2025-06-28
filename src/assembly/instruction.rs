@@ -92,17 +92,17 @@ impl Instruction {
             },
             Instruction::Jump(label) => {
                 let address = label.get_address(line, labels)?;
-                binary |= address as u16 & 0b1111_1111_1111;
+                binary |= address as u16 & 0b11_1111_1111;
             },
             Instruction::Branch(condition, label) => {
                 binary |= (condition.index() as u16 & 0b11) << 10;
 
                 let address = label.get_address(line, labels)?;
-                binary |= address as u16 & 0b1111_1111_1111;
+                binary |= address as u16 & 0b11_1111_1111;
             },
             Instruction::Call(label) => {
                 let address = label.get_address(line, labels)?;
-                binary |= address as u16 & 0b1111_1111_1111;
+                binary |= address as u16 & 0b11_1111_1111;
             },
             Instruction::MemoryLoad(a, b, offset) => {
                 binary |= (a.register() as u16 & 0b1111) << 8;
