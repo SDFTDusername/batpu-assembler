@@ -16,7 +16,7 @@ fn main() -> ExitCode {
     let mut values: Vec<&str> = Vec::new();
     let mut options: Vec<&str> = Vec::new();
 
-    let mut args_result: Result<(), Box<dyn Error>> = Ok(());
+    let mut arg_errors: Vec<Box<dyn Error>> = Vec::new();
     let mut help = false;
 
     for arg in args.iter().skip(1) {
@@ -26,8 +26,8 @@ fn main() -> ExitCode {
         }
 
         if options.contains(&arg.as_str()) {
-            args_result = Err(ArgumentError::new(format!("Option \"{}\" was already specified", arg)).into());
-            break;
+            arg_errors.push(ArgumentError::new(format!("Option \"{}\" was already specified", arg)).into());
+            continue;
         }
         
         match arg.as_str() {
@@ -44,16 +44,19 @@ fn main() -> ExitCode {
                 help = true;
             }
             _ => {
-                args_result = Err(ArgumentError::new(format!("Unknown option \"{}\"", arg)).into());
-                break;
+                arg_errors.push(ArgumentError::new(format!("Unknown option \"{}\"", arg)).into());
+                continue;
             }
         }
         
         options.push(arg);
     }
 
-    if let Err(error) = args_result {
-        eprintln!("{}", error);
+    if !arg_errors.is_empty() {
+        for error in arg_errors {
+            eprintln!("{}", error);
+        }
+        
         return ExitCode::FAILURE;
     }
     
@@ -95,6 +98,9 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     }
 
-    println!("Assembled \"{}\" to \"{}\"", input_path, output_path);
+    if config.print_info {
+        println!("Assembled \"{}\" to \"{}\"", input_path, output_path);
+    }
+    
     ExitCode::SUCCESS
 }
