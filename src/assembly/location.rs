@@ -1,4 +1,4 @@
-use crate::assembler_error::AssemblerError;
+use crate::assembler::assembler_error::AssemblerError;
 use std::collections::HashMap;
 use std::error::Error;
 

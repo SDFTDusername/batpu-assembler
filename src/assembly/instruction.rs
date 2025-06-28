@@ -1,8 +1,8 @@
-use crate::condition::Condition;
-use crate::immediate::Immediate;
-use crate::location::Location;
-use crate::offset::Offset;
-use crate::register::Register;
+use crate::assembly::condition::Condition;
+use crate::assembly::immediate::Immediate;
+use crate::assembly::location::Location;
+use crate::assembly::offset::Offset;
+use crate::assembly::register::Register;
 use std::collections::HashMap;
 use std::error::Error;
 
