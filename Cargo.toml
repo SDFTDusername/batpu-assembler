@@ -1,7 +1,7 @@
 [package]
 name = "batpu-assembler"
-version = "1.0.0"
+version = "0.0.1"
 edition = "2024"
 
 [dependencies]
-batpu-assembly = { git = "https://github.com/SDFTDusername/batpu-assembly.git", version = "0.1.0" }
+batpu-assembly = { git = "https://github.com/SDFTDusername/batpu-assembly.git", version = "0.0.1" }
