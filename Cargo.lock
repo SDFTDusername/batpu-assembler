@@ -5,3 +5,11 @@ version = 4
 [[package]]
 name = "batpu-assembler"
 version = "1.0.0"
+dependencies = [
+ "batpu-assembly",
+]
+
+[[package]]
+name = "batpu-assembly"
+version = "0.1.0"
+source = "git+https://github.com/SDFTDusername/batpu-assembly.git#8bebf38c6e4580cdfcf2ad479510eca287d0fbd0"

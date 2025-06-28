@@ -1,7 +1,3 @@
-pub mod assembly;
+pub mod assembler_error;
+pub mod assembler_config;
 pub mod assembler;
-
-#[cfg(test)]
-mod tests {
-    
-}

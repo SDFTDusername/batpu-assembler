@@ -1,4 +1,4 @@
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct AssemblerConfig {
     pub default_defines: bool,
     pub print_info: bool,

@@ -1,8 +1,8 @@
 mod argument_error;
 
 use crate::argument_error::ArgumentError;
-use batpu_assembler::assembler::assembler::Assembler;
-use batpu_assembler::assembler::assembler_config::AssemblerConfig;
+use batpu_assembler::assembler::Assembler;
+use batpu_assembler::assembler_config::AssemblerConfig;
 use std::env;
 use std::error::Error;
 use std::process::ExitCode;
