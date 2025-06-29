@@ -78,7 +78,7 @@ impl Assembler {
         }
     }
 
-    pub fn parse_line(&mut self, mut line: &str) -> Result<Option<Instruction>, Box<dyn Error>> {
+    fn parse_line(&mut self, mut line: &str) -> Result<Option<Instruction>, Box<dyn Error>> {
         let comment_index = line.find("//");
 
         match comment_index {
