@@ -78,6 +78,29 @@ impl Assembler {
         }
     }
 
+    fn check_arguments(&self, mut actual_len: usize, expected: &[&str]) -> Result<(), AssemblerError> {
+        actual_len -= 1;
+        
+        if actual_len != expected.len() {
+            return Err(AssemblerError::new_line(format!(
+                "Expected {}, got {} instead",
+                if expected.len() == 0 {
+                    "no arguments".to_string()
+                } else {
+                    format!(
+                        "{} ({} argument{})",
+                        Self::join_with_and(expected),
+                        expected.len(),
+                        if expected.len() == 1 { "" } else { "s" }
+                    )
+                },
+                actual_len
+            ), self.line));
+        }
+
+        Ok(())
+    }
+
     fn parse_line(&mut self, mut line: &str) -> Result<Option<Instruction>, Box<dyn Error>> {
         let comment_index = line.find("//");
 
@@ -112,7 +135,7 @@ impl Assembler {
         }
 
         if name.eq("#define") {
-            assert_eq!(args.len(), 3, "Expected name and value for define, got {}", args.len() - 1);
+            self.check_arguments(args.len(), &["Name", "Value"])?;
 
             let define_name = args[1];
 
@@ -135,13 +158,15 @@ impl Assembler {
 
         let instruction = match name {
             "nop" => {
+                self.check_arguments(args.len(), &[])?;
                 Instruction::NoOperation
             },
             "hlt" => {
+                self.check_arguments(args.len(), &[])?;
                 Instruction::Halt
             },
             "add" => {
-                assert_eq!(args.len(), 4, "Expected 3 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegB", "RegC"])?;
                 Instruction::Addition(
                     self.get_register(args[1])?,
                     self.get_register(args[2])?,
@@ -149,7 +174,7 @@ impl Assembler {
                 )
             },
             "sub" => {
-                assert_eq!(args.len(), 4, "Expected 3 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegB", "RegC"])?;
                 Instruction::Subtraction(
                     self.get_register(args[1])?,
                     self.get_register(args[2])?,
@@ -157,7 +182,7 @@ impl Assembler {
                 )
             },
             "nor" => {
-                assert_eq!(args.len(), 4, "Expected 3 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegB", "RegC"])?;
                 Instruction::BitwiseNOR(
                     self.get_register(args[1])?,
                     self.get_register(args[2])?,
@@ -165,7 +190,7 @@ impl Assembler {
                 )
             },
             "and" => {
-                assert_eq!(args.len(), 4, "Expected 3 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegB", "RegC"])?;
                 Instruction::BitwiseAND(
                     self.get_register(args[1])?,
                     self.get_register(args[2])?,
@@ -173,7 +198,7 @@ impl Assembler {
                 )
             },
             "xor" => {
-                assert_eq!(args.len(), 4, "Expected 3 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegB", "RegC"])?;
                 Instruction::BitwiseXOR(
                     self.get_register(args[1])?,
                     self.get_register(args[2])?,
@@ -181,51 +206,51 @@ impl Assembler {
                 )
             },
             "rsh" => {
-                assert_eq!(args.len(), 3, "Expected 2 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegC"])?;
                 Instruction::RightShift(
                     self.get_register(args[1])?,
                     self.get_register(args[2])?
                 )
             },
             "ldi" => {
-                assert_eq!(args.len(), 3, "Expected 2 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "Immediate"])?;
                 Instruction::LoadImmediate(
                     self.get_register(args[1])?,
                     self.get_immediate(args[2])?
                 )
             },
             "adi" => {
-                assert_eq!(args.len(), 3, "Expected 2 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "Immediate"])?;
                 Instruction::AddImmediate(
                     self.get_register(args[1])?,
                     self.get_immediate(args[2])?
                 )
             },
             "jmp" => {
-                assert_eq!(args.len(), 2, "Expected 1 argument, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["Label/Address"])?;
                 Instruction::Jump(
                     self.get_location(args[1])?
                 )
             },
             "brh" => {
-                assert_eq!(args.len(), 3, "Expected 2 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["Condition", "Label/Address"])?;
                 Instruction::Branch(
                     self.get_condition(args[1])?,
                     self.get_location(args[2])?
                 )
             },
             "cal" => {
-                assert_eq!(args.len(), 2, "Expected 1 argument, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["Label/Address"])?;
                 Instruction::Call(
                     self.get_location(args[1])?
                 )
             },
             "ret" => {
-                assert_eq!(args.len(), 1, "Expected 0 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &[])?;
                 Instruction::Return
             },
             "lod" => {
-                assert_eq!(args.len(), 4, "Expected 3 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegB", "Offset"])?;
                 Instruction::MemoryLoad(
                     self.get_register(args[1])?,
                     self.get_register(args[2])?,
@@ -233,7 +258,7 @@ impl Assembler {
                 )
             },
             "str" => {
-                assert_eq!(args.len(), 4, "Expected 3 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegB", "Offset"])?;
                 Instruction::MemoryStore(
                     self.get_register(args[1])?,
                     self.get_register(args[2])?,
@@ -241,7 +266,7 @@ impl Assembler {
                 )
             },
             "cmp" => {
-                assert_eq!(args.len(), 3, "Expected 2 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegB"])?;
                 Instruction::Subtraction(
                     self.get_register(args[1])?,
                     self.get_register(args[2])?,
@@ -249,7 +274,7 @@ impl Assembler {
                 )
             },
             "mov" => {
-                assert_eq!(args.len(), 3, "Expected 2 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegC"])?;
                 Instruction::Addition(
                     self.get_register(args[1])?,
                     Register::new(0),
@@ -257,7 +282,7 @@ impl Assembler {
                 )
             },
             "lsh" => {
-                assert_eq!(args.len(), 3, "Expected 2 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegC"])?;
                 let a = self.get_register(args[1])?;
                 Instruction::Addition(
                     a,
@@ -266,21 +291,21 @@ impl Assembler {
                 )
             },
             "inc" => {
-                assert_eq!(args.len(), 2, "Expected 1 argument, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA"])?;
                 Instruction::AddImmediate(
                     self.get_register(args[1])?,
                     Immediate::new(1)
                 )
             },
             "dec" => {
-                assert_eq!(args.len(), 2, "Expected 1 argument, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA"])?;
                 Instruction::AddImmediate(
                     self.get_register(args[1])?,
                     Immediate::new_signed(-1)
                 )
             },
             "not" => {
-                assert_eq!(args.len(), 3, "Expected 2 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegC"])?;
                 Instruction::BitwiseNOR(
                     self.get_register(args[1])?,
                     Register::new(0),
@@ -288,7 +313,7 @@ impl Assembler {
                 )
             },
             "neg" => {
-                assert_eq!(args.len(), 3, "Expected 2 arguments, got {}", args.len() - 1);
+                self.check_arguments(args.len(), &["RegA", "RegC"])?;
                 Instruction::Subtraction(
                     Register::new(0),
                     self.get_register(args[1])?,
@@ -535,6 +560,20 @@ impl Assembler {
             },
             Err(error) => {
                 Err(AssemblerError::new_line(format!("Failed to parse offset \"{}\": {}", offset, error), self.line).into())
+            }
+        }
+    }
+    
+    fn join_with_and(items: &[&str]) -> String {
+        match items.len() {
+            0 => String::new(),
+            1 => items[0].to_string(),
+            2 => format!("{} and {}", items[0], items[1]),
+            _ => {
+                let all_but_last = &items[..items.len() - 1];
+                let last = items[items.len() - 1];
+                
+                format!("{} and {}", all_but_last.join(", "), last)
             }
         }
     }
