@@ -80,20 +80,22 @@ fn main() -> ExitCode {
     
     let parse_result = assembler.parse_file(input_path);
     if let Err(errors) = parse_result {
-        eprintln!("Failed to parse \"{}\", {} error(s):", input_path, errors.len());
-        for error in errors {
+        eprintln!("Failed to parse \"{}\":", input_path);
+        for error in &errors {
             eprintln!("{}", error);
         }
+        eprintln!("{} error{}", errors.len(), if errors.len() == 1 { "" } else { "s" });
         
         return ExitCode::FAILURE;
     }
 
     let assemble_result = assembler.assemble_to_file(output_path);
     if let Err(errors) = assemble_result {
-        eprintln!("Failed to assemble \"{}\", {} error(s):", input_path, errors.len());
-        for error in errors {
+        eprintln!("Failed to assemble \"{}\":", input_path);
+        for error in &errors {
             eprintln!("{}", error);
         }
+        eprintln!("{} error{}", errors.len(), if errors.len() == 1 { "" } else { "s" });
 
         return ExitCode::FAILURE;
     }
