@@ -357,14 +357,6 @@ impl Assembler {
             return Err(errors);
         }
 
-        if self.config.print_info {
-            println!(
-                "{} out of 1024 instructions used ({:.1}%)",
-                self.instructions.len(),
-                self.instructions.len() as f64 * 100.0 / 1024.0
-            );
-        }
-
         Ok(())
     }
 
@@ -378,7 +370,21 @@ impl Assembler {
     }
 
     pub fn assemble(&self) -> Result<Vec<u16>, Vec<AssemblyError>> {
-        instructions_to_binary(&self.instructions, &self.labels)
+        let result = instructions_to_binary(&self.instructions, &self.labels);
+        
+        if result.is_err() {
+            return result;
+        }
+
+        if self.config.print_info {
+            println!(
+                "{} out of 1024 instructions used ({:.1}%)",
+                self.instructions.len(),
+                self.instructions.len() as f64 * 100.0 / 1024.0
+            );
+        }
+        
+        result
     }
     
     pub fn assemble_to_file(&mut self, path: &str) -> Result<(), Vec<Box<dyn Error>>> {
