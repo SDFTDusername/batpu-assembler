@@ -334,16 +334,17 @@ impl Assembler {
             return Ok(instructions);
         }
 
-        if line.ends_with(';') {
-            errors.push(AssemblerError::new_line("Semicolons at the end of lines are useless".to_string(), self.line).into());
-        }
-
         let pieces: Vec<&str> = line
             .split(';')
-            .filter(|piece| !piece.trim().is_empty())
+            .map(|piece| piece.trim())
             .collect();
 
         for piece in pieces {
+            if piece.is_empty() {
+                errors.push(AssemblerError::new_line("Useless semicolon".to_string(), self.line).into());
+                continue;
+            }
+            
             let result = self.parse_piece(piece);
             match result {
                 Ok(instruction) => {
