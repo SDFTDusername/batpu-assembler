@@ -529,6 +529,27 @@ impl Assembler {
     }
 
     fn get_location(&self, location: &str) -> Result<Location, Box<dyn Error>> {
+        let add = location.starts_with('+');
+        let sub = location.starts_with('-');
+        
+        if add || sub {
+            let result = Self::parse_usize(&location[1..]);
+            return match result {
+                Ok(num) => {
+                    if add {
+                        Ok(Location::Offset(num as isize))
+                    } else if sub {
+                        Ok(Location::Offset(-(num as isize)))
+                    } else {
+                        panic!("Unknown location \"{}\"", location);
+                    }
+                },
+                Err(error) => {
+                    Err(AssemblerError::new_line(format!("Failed to parse address offset \"{}\": {}", location, error), self.line).into())
+                }
+            }
+        }
+        
         let result = Self::parse_usize(location);
         match result {
             Ok(num) => {
