@@ -88,8 +88,8 @@ render:
   ldi MEM_ADDR SCR_DRAW_PIX
   str MEM_ADDR r0 0
   
-  // Draw screen
-  ldi MEM_ADDR SCR_DRAW
+  // Push screen buffer
+  ldi MEM_ADDR SCR_PUSH
   str MEM_ADDR r0 0
   
   ret

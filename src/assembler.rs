@@ -40,14 +40,14 @@ impl Assembler {
 
             defines.insert("SCR_DRAW_PIX".to_string(), "242".to_string());
             defines.insert("SCR_CLR_PIX".to_string(), "243".to_string());
-            defines.insert("SCR_LOAD_PIX".to_string(), "244".to_string());
+            defines.insert("SCR_GET_PIX".to_string(), "244".to_string());
 
-            defines.insert("SCR_DRAW".to_string(), "245".to_string());
+            defines.insert("SCR_PUSH".to_string(), "245".to_string());
             defines.insert("SCR_CLR".to_string(), "246".to_string());
 
             // Character Display
 
-            defines.insert("CHAR_DISP_WRITE".to_string(), "247".to_string());
+            defines.insert("CHAR_DISP_PUSH".to_string(), "247".to_string());
 
             defines.insert("CHAR_DISP_DRAW".to_string(), "248".to_string());
             defines.insert("CHAR_DISP_CLR".to_string(), "249".to_string());
