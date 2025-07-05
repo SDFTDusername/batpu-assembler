@@ -10,22 +10,14 @@ main:
   
   // Initialize map
   ldi MEM_ADDR 0
-  ldi r5 0b00000000
-  cal batch_map
-  ldi r5 0b00000000
-  cal batch_map
-  ldi r5 0b00000000
-  cal batch_map
-  ldi r5 0b01110001
-  cal batch_map
-  ldi r5 0b00000010
-  cal batch_map
-  ldi r5 0b00000100
-  cal batch_map
-  ldi r5 0b00001000
-  cal batch_map
-  ldi r5 0b11111111
-  cal batch_map
+  ldi r5 0b00000000; cal batch_map
+  ldi r5 0b00000000; cal batch_map
+  ldi r5 0b00000000; cal batch_map
+  ldi r5 0b01110001; cal batch_map
+  ldi r5 0b00000010; cal batch_map
+  ldi r5 0b00000100; cal batch_map
+  ldi r5 0b00001000; cal batch_map
+  ldi r5 0b11111111; cal batch_map
 
 loop:
   cal step

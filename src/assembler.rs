@@ -101,29 +101,16 @@ impl Assembler {
         Ok(())
     }
 
-    fn parse_line(&mut self, mut line: &str) -> Result<Option<Instruction>, Box<dyn Error>> {
-        let comment_index = line.find("//");
-
-        match comment_index {
-            Some(index) => {
-                line = &line[..index];
-            }
-            None => {}
-        }
-
-        line = line.trim();
-
-        if line.is_empty() {
-            return Ok(None);
-        }
-
-        let mut args: Vec<&str> = line
+    fn parse_piece(&mut self, piece: &str) -> Result<Option<Instruction>, Box<dyn Error>> {
+        let mut args: Vec<&str> = piece
             .split_whitespace()
             .collect();
 
         let name = args[0];
 
         if name.ends_with(':') {
+            self.check_arguments(args.len(), &[])?;
+
             let label_name = name[..name.len() - 1].to_string();
 
             if self.labels.contains_key(&label_name) {
@@ -328,6 +315,55 @@ impl Assembler {
         Ok(Some(instruction))
     }
 
+    fn parse_line(&mut self, mut line: &str) -> Result<Vec<Instruction>, Vec<Box<dyn Error>>> {
+        let mut errors = Vec::new();
+        let mut instructions = Vec::new();
+
+        let comment_index = line.find("//");
+
+        match comment_index {
+            Some(index) => {
+                line = &line[..index];
+            }
+            None => {}
+        }
+
+        line = line.trim();
+
+        if line.is_empty() {
+            return Ok(instructions);
+        }
+
+        if line.ends_with(';') {
+            errors.push(AssemblerError::new_line("Semicolons at the end of lines are useless".to_string(), self.line).into());
+        }
+
+        let pieces: Vec<&str> = line
+            .split(';')
+            .filter(|piece| !piece.trim().is_empty())
+            .collect();
+
+        for piece in pieces {
+            let result = self.parse_piece(piece);
+            match result {
+                Ok(instruction) => {
+                    if let Some(instruction) = instruction {
+                        instructions.push(instruction);
+                    }
+                },
+                Err(error) => {
+                    errors.push(error);
+                }
+            }
+        }
+
+        if !errors.is_empty() {
+            return Err(errors);
+        }
+
+        Ok(instructions)
+    }
+
     pub fn parse(&mut self, input: &str) -> Result<(), Vec<Box<dyn Error>>> {
         let mut errors: Vec<Box<dyn Error>> = Vec::new();
 
@@ -337,13 +373,11 @@ impl Assembler {
             let result = self.parse_line(line);
 
             match result {
-                Ok(result) => {
-                    if let Some(instruction) = result {
-                        self.instructions.push(instruction);
-                    }
+                Ok(mut result) => {
+                    self.instructions.append(&mut result);
                 },
-                Err(error) => {
-                    errors.push(error);
+                Err(mut parse_errors) => {
+                    errors.append(&mut parse_errors);
                 }
             }
         }
@@ -531,7 +565,7 @@ impl Assembler {
     fn get_location(&self, location: &str) -> Result<Location, Box<dyn Error>> {
         let add = location.starts_with('+');
         let sub = location.starts_with('-');
-        
+
         if add || sub {
             let result = Self::parse_usize(&location[1..]);
             return match result {
@@ -549,7 +583,7 @@ impl Assembler {
                 }
             }
         }
-        
+
         let result = Self::parse_usize(location);
         match result {
             Ok(num) => {
