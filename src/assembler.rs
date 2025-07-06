@@ -35,36 +35,36 @@ impl Assembler {
         if config.default_defines {
             // Screen
 
-            defines.insert("SCR_PIX_X".to_string(), "240".to_string());
-            defines.insert("SCR_PIX_Y".to_string(), "241".to_string());
+            defines.insert("SCR_PIX_X".to_string(), "65_520".to_string());
+            defines.insert("SCR_PIX_Y".to_string(), "65_521".to_string());
 
-            defines.insert("SCR_DRAW_PIX".to_string(), "242".to_string());
-            defines.insert("SCR_CLR_PIX".to_string(), "243".to_string());
-            defines.insert("SCR_GET_PIX".to_string(), "244".to_string());
+            defines.insert("SCR_DRAW_PIX".to_string(), "65_522".to_string());
+            defines.insert("SCR_CLR_PIX".to_string(), "65_523".to_string());
+            defines.insert("SCR_GET_PIX".to_string(), "65_524".to_string());
 
-            defines.insert("SCR_PUSH".to_string(), "245".to_string());
-            defines.insert("SCR_CLR".to_string(), "246".to_string());
+            defines.insert("SCR_PUSH".to_string(), "65_525".to_string());
+            defines.insert("SCR_CLR".to_string(), "65_526".to_string());
 
             // Character Display
 
-            defines.insert("CHAR_DISP_PUSH".to_string(), "247".to_string());
+            defines.insert("CHAR_DISP_PUSH".to_string(), "65_527".to_string());
 
-            defines.insert("CHAR_DISP_DRAW".to_string(), "248".to_string());
-            defines.insert("CHAR_DISP_CLR".to_string(), "249".to_string());
+            defines.insert("CHAR_DISP_DRAW".to_string(), "65_528".to_string());
+            defines.insert("CHAR_DISP_CLR".to_string(), "65_529".to_string());
 
             // Number Display
 
-            defines.insert("NUM_DISP_SHOW".to_string(), "250".to_string());
-            defines.insert("NUM_DISP_CLR".to_string(), "251".to_string());
+            defines.insert("NUM_DISP_SHOW".to_string(), "65_530".to_string());
+            defines.insert("NUM_DISP_CLR".to_string(), "65_531".to_string());
 
-            defines.insert("NUM_DISP_SIGNED".to_string(), "252".to_string());
-            defines.insert("NUM_DISP_UNSIGNED".to_string(), "253".to_string());
+            defines.insert("NUM_DISP_SIGNED".to_string(), "65_532".to_string());
+            defines.insert("NUM_DISP_UNSIGNED".to_string(), "65_533".to_string());
 
             // Random Number Generator
-            defines.insert("RNG".to_string(), "254".to_string());
+            defines.insert("RNG".to_string(), "65_534".to_string());
 
             // Controller
-            defines.insert("CONTROLLER".to_string(), "255".to_string());
+            defines.insert("CONTROLLER".to_string(), "65_535".to_string());
         }
 
         Self {
@@ -168,6 +168,22 @@ impl Assembler {
                     self.get_register(args[3])?
                 )
             },
+            "mul" => {
+                self.check_arguments(args.len(), &["RegA", "RegB", "RegC"])?;
+                Instruction::Multiplication(
+                    self.get_register(args[1])?,
+                    self.get_register(args[2])?,
+                    self.get_register(args[3])?
+                )
+            },
+            "div" => {
+                self.check_arguments(args.len(), &["RegA", "RegB", "RegC"])?;
+                Instruction::Division(
+                    self.get_register(args[1])?,
+                    self.get_register(args[2])?,
+                    self.get_register(args[3])?
+                )
+            },
             "nor" => {
                 self.check_arguments(args.len(), &["RegA", "RegB", "RegC"])?;
                 Instruction::BitwiseNOR(
@@ -193,10 +209,19 @@ impl Assembler {
                 )
             },
             "rsh" => {
-                self.check_arguments(args.len(), &["RegA", "RegC"])?;
+                self.check_arguments(args.len(), &["RegA", "RegB", "RegC"])?;
                 Instruction::RightShift(
                     self.get_register(args[1])?,
-                    self.get_register(args[2])?
+                    self.get_register(args[2])?,
+                    self.get_register(args[3])?
+                )
+            },
+            "lsh" => {
+                self.check_arguments(args.len(), &["RegA", "RegB", "RegC"])?;
+                Instruction::LeftShift(
+                    self.get_register(args[1])?,
+                    self.get_register(args[2])?,
+                    self.get_register(args[3])?
                 )
             },
             "ldi" => {
@@ -252,6 +277,18 @@ impl Assembler {
                     self.get_offset(args[3])?
                 )
             },
+            "psh" => {
+                self.check_arguments(args.len(), &["RegA"])?;
+                Instruction::PushStack(
+                    self.get_register(args[1])?
+                )
+            },
+            "pop" => {
+                self.check_arguments(args.len(), &["RegA"])?;
+                Instruction::PopStack(
+                    self.get_register(args[1])?
+                )
+            },
             "cmp" => {
                 self.check_arguments(args.len(), &["RegA", "RegB"])?;
                 Instruction::Subtraction(
@@ -265,15 +302,6 @@ impl Assembler {
                 Instruction::Addition(
                     self.get_register(args[1])?,
                     Register::new(0),
-                    self.get_register(args[2])?
-                )
-            },
-            "lsh" => {
-                self.check_arguments(args.len(), &["RegA", "RegC"])?;
-                let a = self.get_register(args[1])?;
-                Instruction::Addition(
-                    a,
-                    a,
                     self.get_register(args[2])?
                 )
             },
@@ -383,8 +411,8 @@ impl Assembler {
             }
         }
 
-        if self.instructions.len() > 1023 {
-            errors.push(AssemblerError::new("Program reached maximum size (1024 instructions)".to_string()).into());
+        if self.instructions.len() > 16_777_215 {
+            errors.push(AssemblerError::new("Program reached maximum size (16_777_216 instructions)".to_string()).into());
             return Err(errors);
         }
 
@@ -404,7 +432,7 @@ impl Assembler {
         }
     }
 
-    pub fn assemble(&self) -> Result<Vec<u16>, Vec<AssemblyError>> {
+    pub fn assemble(&self) -> Result<Vec<u32>, Vec<AssemblyError>> {
         let result = instructions_to_binary(&self.instructions, &self.labels);
         
         if result.is_err() {
@@ -413,9 +441,9 @@ impl Assembler {
 
         if self.config.print_info {
             println!(
-                "{} out of 1024 instructions used ({:.1}%)",
+                "{} out of 16,777,216 instructions used ({:.1}%)",
                 self.instructions.len(),
-                self.instructions.len() as f64 * 100.0 / 1024.0
+                self.instructions.len() as f64 * 100.0 / 16_777_216.0
             );
         }
         
@@ -433,7 +461,7 @@ impl Assembler {
 
                         if self.config.text_output {
                             for (i, &instruction) in machine_code.iter().enumerate() {
-                                let line = format!("{:016b}", instruction);
+                                let line = format!("{:032b}", instruction);
 
                                 let instruction_write = output_writer.write_all(line.as_bytes());
                                 if let Err(error) = instruction_write {
@@ -510,10 +538,6 @@ impl Assembler {
 
         match result {
             Ok(num) => {
-                if num > 15 {
-                    return Err(AssemblerError::new_line(format!("Register {} out of range, expected 0-15", register), self.line).into());
-                }
-
                 Ok(Register::new(num))
             },
             Err(error) => {
@@ -539,7 +563,7 @@ impl Assembler {
 
             return match char_index {
                 Some(index) => {
-                    Ok(Immediate::new(index as u8))
+                    Ok(Immediate::new(index as u16))
                 }
                 None => {
                     Err(AssemblerError::new_line(format!("Character \"{}\" is not supported, you can only use ones in \"{}\"", char, CHARACTERS.iter().collect::<String>()), self.line).into())
@@ -551,11 +575,11 @@ impl Assembler {
 
         match result {
             Ok(num) => {
-                if num < -128 || num > 255 {
-                    return Err(AssemblerError::new_line(format!("Immediate {} out of range, expected -128-255", immediate), self.line).into());
+                if num < -65_535 || num > 65_535 {
+                    return Err(AssemblerError::new_line(format!("Immediate {} out of range, expected -65,535-65,535", immediate), self.line).into());
                 }
                 
-                Ok(Immediate::new_signed(num as i16))
+                Ok(Immediate::new_signed(num))
             },
             Err(error) => {
                 Err(AssemblerError::new_line(format!("Failed to parse immediate \"{}\": {}", immediate, error), self.line).into())
@@ -588,11 +612,11 @@ impl Assembler {
         let result = Self::parse_usize(location);
         match result {
             Ok(num) => {
-                if num > 1023 {
-                    return Err(AssemblerError::new_line(format!("Address {} out of range, expected 0-1023", num), self.line).into());
+                if num > 16_777_215 {
+                    return Err(AssemblerError::new_line(format!("Address {} out of range, expected 0-16,777,215", num), self.line).into());
                 }
 
-                Ok(Location::Address(Address::new(num as u16)))
+                Ok(Location::Address(Address::new(num as u32)))
             }
             Err(_) => {
                 Ok(Location::Label(location.to_string()))
