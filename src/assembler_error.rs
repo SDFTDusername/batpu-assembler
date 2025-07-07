@@ -1,3 +1,4 @@
+use batpu_assembly::assembly_error::AssemblyError;
 use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -5,25 +6,44 @@ use std::fmt::{Display, Formatter};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AssemblerError {
     pub description: String,
-    pub line: usize
+    pub line: Option<u32>
 }
 
 impl AssemblerError {
     pub fn new(description: String) -> Self {
-        Self { description, line: 0 }
+        Self {
+            description,
+            line: None
+        }
     }
 
-    pub fn new_line(description: String, line: usize) -> Self {
-        Self { description, line }
+    pub fn new_line(description: String, line: u32) -> Self {
+        Self {
+            description,
+            line: Some(line)
+        }
+    }
+
+    pub fn from_assembly_error(error: &AssemblyError) -> Self {
+        Self {
+            description: error.description.clone(),
+            line: None
+        }
+    }
+
+    pub fn from_assembly_error_line(error: &AssemblyError, line: u32) -> Self {
+        Self {
+            description: error.description.clone(),
+            line: Some(line)
+        }
     }
 }
 
 impl Display for AssemblerError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        if self.line == 0 {
-            write!(f, "{}", self.description)
-        } else {
-            write!(f, "[Line {}] {}", self.line, self.description)
+        match self.line {
+            Some(line) => write!(f, "[Line {}] {}", line, self.description),
+            None => write!(f, "{}", self.description)
         }
     }
 }

@@ -1,6 +1,6 @@
 use crate::assembler_config::AssemblerConfig;
 use crate::assembler_error::AssemblerError;
-use batpu_assembly::assembly_error::AssemblyError;
+use batpu_assembly::components::address;
 use batpu_assembly::components::address::Address;
 use batpu_assembly::components::condition::Condition;
 use batpu_assembly::components::immediate::Immediate;
@@ -21,11 +21,11 @@ const CHARACTERS: &[char] = &[' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 
 pub struct Assembler {
     pub config: AssemblerConfig,
     
-    instructions: Vec<(Instruction, usize)>,
+    instructions: Vec<(Instruction, u32)>,
     labels: Labels,
     defines: HashMap<String, String>,
 
-    line: usize
+    line: u32
 }
 
 impl Assembler {
@@ -117,7 +117,7 @@ impl Assembler {
                 return Err(AssemblerError::new_line(format!("Label \"{}\" was already defined", label_name), self.line).into());
             }
 
-            self.labels.insert(label_name, self.instructions.len());
+            self.labels.insert(label_name, Immediate::new(self.instructions.len() as u32)?);
             return Ok(None);
         }
 
@@ -315,7 +315,7 @@ impl Assembler {
         Ok(Some(instruction))
     }
 
-    fn parse_line(&mut self, mut line: &str) -> Result<Vec<(Instruction, usize)>, Vec<Box<dyn Error>>> {
+    fn parse_line(&mut self, mut line: &str) -> Result<Vec<(Instruction, u32)>, Vec<Box<dyn Error>>> {
         let mut errors = Vec::new();
         let mut instructions = Vec::new();
 
@@ -369,7 +369,7 @@ impl Assembler {
         let mut errors: Vec<Box<dyn Error>> = Vec::new();
 
         for (i, line) in input.lines().into_iter().enumerate() {
-            self.line = i + 1;
+            self.line = i as u32 + 1;
             
             let result = self.parse_line(line);
 
@@ -383,8 +383,8 @@ impl Assembler {
             }
         }
 
-        if self.instructions.len() > 1023 {
-            errors.push(AssemblerError::new("Program reached maximum size (1024 instructions)".to_string()).into());
+        if self.instructions.len() > address::MAX_VALUE as usize {
+            errors.push(AssemblerError::new(format!("Program reached maximum size ({} instructions)", address::MAX_POSSIBLE_COUNT)).into());
             return Err(errors);
         }
 
@@ -404,19 +404,18 @@ impl Assembler {
         }
     }
 
-    pub fn assemble(&self) -> Result<Vec<u16>, Vec<AssemblyError>> {
-        let mut errors: Vec<AssemblyError> = Vec::new();
+    pub fn assemble(&self) -> Result<Vec<u16>, Vec<AssemblerError>> {
+        let mut errors: Vec<AssemblerError> = Vec::new();
 
         let binary = self.instructions
             .iter()
             .enumerate()
-            .map(|(i, (instruction, line))| {
-                let result = instruction.binary(i, &self.labels);
+            .map(|(address, (instruction, line))| {
+                let result = instruction.binary(address as u32, &self.labels);
                 match result {
                     Ok(binary) => binary,
-                    Err(mut error) => {
-                        error.line = *line;
-                        errors.push(error);
+                    Err(error) => {
+                        errors.push(AssemblerError::from_assembly_error_line(&error, *line));
                         0
                     }
                 }
@@ -429,9 +428,10 @@ impl Assembler {
 
         if self.config.print_info {
             println!(
-                "{} out of 1024 instructions used ({:.1}%)",
+                "{} out of {} instructions used ({:.1}%)",
                 self.instructions.len(),
-                self.instructions.len() as f64 * 100.0 / 1024.0
+                address::MAX_POSSIBLE_COUNT,
+                self.instructions.len() as f32 * 100.0 / address::MAX_POSSIBLE_COUNT as f32
             );
         }
         
@@ -492,13 +492,13 @@ impl Assembler {
         }
     }
 
-    fn parse_usize(str: &str) -> Result<usize, Box<dyn Error>> {
+    fn parse_u32(str: &str) -> Result<u32, Box<dyn Error>> {
         let str = str.replace('_', "");
 
         if str.starts_with("0x") {
-            Ok(usize::from_str_radix(&str[2..], 16)?)
+            Ok(u32::from_str_radix(&str[2..], 16)?)
         } else if str.starts_with("0b") {
-            Ok(usize::from_str_radix(&str[2..], 2)?)
+            Ok(u32::from_str_radix(&str[2..], 2)?)
         } else {
             Ok(str.parse()?)
         }
@@ -522,16 +522,15 @@ impl Assembler {
         }
 
         let register = &register[1..];
-        let result = register.parse::<u8>();
+        let result = register.parse::<u32>();
 
         match result {
             Ok(num) => {
                 let result = Register::new(num);
                 match result {
                     Ok(register) => Ok(register),
-                    Err(mut error) => {
-                        error.line = self.line;
-                        Err(error.into())
+                    Err(error) => {
+                        Err(AssemblerError::from_assembly_error_line(&error, self.line).into())
                     }
                 }
             },
@@ -558,7 +557,7 @@ impl Assembler {
 
             return match char_index {
                 Some(index) => {
-                    Ok(Immediate::new(index as u8)?)
+                    Ok(Immediate::new(index as u32)?)
                 }
                 None => {
                     Err(AssemblerError::new_line(format!("Character \"{}\" is not supported, you can only use ones in \"{}\"", char, CHARACTERS.iter().collect::<String>()), self.line).into())
@@ -570,12 +569,11 @@ impl Assembler {
 
         match result {
             Ok(num) => {
-                let result = Immediate::new_signed(num as i16);
+                let result = Immediate::new_signed(num);
                 match result {
                     Ok(immediate) => Ok(immediate),
-                    Err(mut error) => {
-                        error.line = self.line;
-                        Err(error.into())
+                    Err(error) => {
+                        Err(AssemblerError::from_assembly_error_line(&error, self.line).into())
                     }
                 }
             },
@@ -590,16 +588,18 @@ impl Assembler {
         let sub = location.starts_with('-');
 
         if add || sub {
-            let result = Self::parse_usize(&location[1..]);
+            let result = Self::parse_u32(&location[1..]);
             return match result {
                 Ok(num) => {
-                    if add {
-                        Ok(Location::Offset(num as isize))
+                    let num = if add {
+                        num as i32
                     } else if sub {
-                        Ok(Location::Offset(-(num as isize)))
+                        -(num as i32)
                     } else {
-                        panic!("Unknown location \"{}\"", location);
-                    }
+                        return Err(AssemblerError::new_line(format!("Unknown location \"{}\"", location),  self.line).into());
+                    };
+                    
+                    Ok(Location::Offset(Offset::new(num)?))
                 },
                 Err(error) => {
                     Err(AssemblerError::new_line(format!("Failed to parse address offset \"{}\": {}", location, error), self.line).into())
@@ -607,15 +607,14 @@ impl Assembler {
             }
         }
 
-        let result = Self::parse_usize(location);
+        let result = Self::parse_u32(location);
         match result {
             Ok(num) => {
-                let result = Address::new(num as u16);
+                let result = Address::new(num);
                 match result {
                     Ok(address) => Ok(Location::Address(address)),
-                    Err(mut error) => {
-                        error.line = self.line;
-                        Err(error.into())
+                    Err(error) => {
+                        Err(AssemblerError::from_assembly_error_line(&error, self.line).into())
                     }
                 }
             }
@@ -639,12 +638,11 @@ impl Assembler {
         let result = Self::parse_i32(offset);
         match result {
             Ok(num) => {
-                let result = Offset::new(num as i8);
+                let result = Offset::new(num);
                 match result {
                     Ok(offset) => Ok(offset),
-                    Err(mut error) => {
-                        error.line = self.line;
-                        Err(error.into())
+                    Err(error) => {
+                        Err(AssemblerError::from_assembly_error_line(&error, self.line).into())
                     }
                 }
             },
