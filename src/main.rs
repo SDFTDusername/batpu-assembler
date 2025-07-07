@@ -61,11 +61,11 @@ fn main() -> ExitCode {
     }
     
     if help || values.is_empty() {
-        println!("batpu-assembler v0.0.1
+        println!("batpu-assembler v{}
 Usage: batpu-assembler [INPUT] [OUTPUT]
 -d, --disable-default-defines - Disables built-in defines, such as SCR_PIX_X
 -p, --no-print-info           - Do not print assembler info
--t, --text-output             - Assemble to text file with binary representation");
+-t, --text-output             - Assemble to text file with binary representation", env!("CARGO_PKG_VERSION"));
         return ExitCode::SUCCESS;
     }
     
