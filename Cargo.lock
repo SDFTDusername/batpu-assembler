@@ -12,4 +12,4 @@ dependencies = [
 [[package]]
 name = "batpu-assembly"
 version = "0.0.1"
-source = "git+https://github.com/SDFTDusername/batpu-assembly.git#35884be8deed507bdd2ee89561dc74ee4d329632"
+source = "git+https://github.com/SDFTDusername/batpu-assembly.git#3a2ae2fe8ddeedbeb75702845c2175657f52111e"

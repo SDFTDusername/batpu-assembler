@@ -7,7 +7,7 @@ use batpu_assembly::components::immediate::Immediate;
 use batpu_assembly::components::location::Location;
 use batpu_assembly::components::offset::Offset;
 use batpu_assembly::components::register::Register;
-use batpu_assembly::instruction::Instruction;
+use batpu_assembly::instruction::{Instruction, BITS};
 use batpu_assembly::Labels;
 use std::collections::HashMap;
 use std::error::Error;
@@ -342,7 +342,6 @@ impl Assembler {
         for piece in pieces {
             if piece.is_empty() {
                 errors.push(AssemblerError::new_line("Useless semicolon".to_string(), self.line).into());
-                continue;
             }
             
             let result = self.parse_piece(piece);
@@ -449,7 +448,7 @@ impl Assembler {
 
                         if self.config.text_output {
                             for (i, &instruction) in machine_code.iter().enumerate() {
-                                let line = format!("{:016b}", instruction);
+                                let line = format!("{:0bits$b}", instruction, bits=BITS as usize);
 
                                 let instruction_write = output_writer.write_all(line.as_bytes());
                                 if let Err(error) = instruction_write {
