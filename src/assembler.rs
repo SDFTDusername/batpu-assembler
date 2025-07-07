@@ -383,7 +383,7 @@ impl Assembler {
         }
 
         if self.instructions.len() > address::MAX_VALUE as usize {
-            errors.push(AssemblerError::new(format!("Program reached maximum size ({} instructions)", address::MAX_POSSIBLE_COUNT)).into());
+            errors.push(AssemblerError::new(format!("Program reached maximum size ({} instructions)", Self::with_commas(address::MAX_POSSIBLE_COUNT))).into());
             return Err(errors);
         }
 
@@ -428,8 +428,8 @@ impl Assembler {
         if self.config.print_info {
             println!(
                 "{} out of {} instructions used ({:.1}%)",
-                self.instructions.len(),
-                address::MAX_POSSIBLE_COUNT,
+                Self::with_commas(self.instructions.len() as u32),
+                Self::with_commas(address::MAX_POSSIBLE_COUNT),
                 self.instructions.len() as f32 * 100.0 / address::MAX_POSSIBLE_COUNT as f32
             );
         }
@@ -655,5 +655,28 @@ impl Assembler {
                 format!("{} and {}", all_but_last.join(", "), last)
             }
         }
+    }
+    
+    fn with_commas(mut number: u32) -> String {
+        if number == 0 {
+            return "0".to_string();
+        }
+        
+        let mut result = String::new();
+        let mut digits = 0;
+        
+        while number > 0 {
+            if digits > 0 && digits % 3 == 0 {
+                result.push(',');
+            }
+            
+            let digit = (number % 10) as u8 + b'0';
+            result.push(digit as char);
+            
+            number /= 10;
+            digits += 1;
+        }
+        
+        result.chars().rev().collect()
     }
 }
