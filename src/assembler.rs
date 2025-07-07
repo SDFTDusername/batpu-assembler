@@ -257,14 +257,14 @@ impl Assembler {
                 Instruction::Subtraction(
                     self.get_register(args[1])?,
                     self.get_register(args[2])?,
-                    Register::new(0)
+                    Register::new(0)?
                 )
             },
             "mov" => {
                 self.check_arguments(args.len(), &["RegA", "RegC"])?;
                 Instruction::Addition(
                     self.get_register(args[1])?,
-                    Register::new(0),
+                    Register::new(0)?,
                     self.get_register(args[2])?
                 )
             },
@@ -281,28 +281,28 @@ impl Assembler {
                 self.check_arguments(args.len(), &["RegA"])?;
                 Instruction::AddImmediate(
                     self.get_register(args[1])?,
-                    Immediate::new(1)
+                    Immediate::new(1)?
                 )
             },
             "dec" => {
                 self.check_arguments(args.len(), &["RegA"])?;
                 Instruction::AddImmediate(
                     self.get_register(args[1])?,
-                    Immediate::new_signed(-1)
+                    Immediate::new_signed(-1)?
                 )
             },
             "not" => {
                 self.check_arguments(args.len(), &["RegA", "RegC"])?;
                 Instruction::BitwiseNOR(
                     self.get_register(args[1])?,
-                    Register::new(0),
+                    Register::new(0)?,
                     self.get_register(args[2])?
                 )
             },
             "neg" => {
                 self.check_arguments(args.len(), &["RegA", "RegC"])?;
                 Instruction::Subtraction(
-                    Register::new(0),
+                    Register::new(0)?,
                     self.get_register(args[1])?,
                     self.get_register(args[2])?
                 )
@@ -510,11 +510,14 @@ impl Assembler {
 
         match result {
             Ok(num) => {
-                if num > 15 {
-                    return Err(AssemblerError::new_line(format!("Register {} out of range, expected 0-15", register), self.line).into());
+                let result = Register::new(num);
+                match result {
+                    Ok(register) => Ok(register),
+                    Err(mut error) => {
+                        error.line = self.line;
+                        Err(error.into())
+                    }
                 }
-
-                Ok(Register::new(num))
             },
             Err(error) => {
                 Err(AssemblerError::new_line(format!("Failed to parse register \"{}\": {}", register, error), self.line).into())
@@ -539,7 +542,7 @@ impl Assembler {
 
             return match char_index {
                 Some(index) => {
-                    Ok(Immediate::new(index as u8))
+                    Ok(Immediate::new(index as u8)?)
                 }
                 None => {
                     Err(AssemblerError::new_line(format!("Character \"{}\" is not supported, you can only use ones in \"{}\"", char, CHARACTERS.iter().collect::<String>()), self.line).into())
@@ -551,11 +554,14 @@ impl Assembler {
 
         match result {
             Ok(num) => {
-                if num < -128 || num > 255 {
-                    return Err(AssemblerError::new_line(format!("Immediate {} out of range, expected -128-255", immediate), self.line).into());
+                let result = Immediate::new_signed(num as i16);
+                match result {
+                    Ok(immediate) => Ok(immediate),
+                    Err(mut error) => {
+                        error.line = self.line;
+                        Err(error.into())
+                    }
                 }
-                
-                Ok(Immediate::new_signed(num as i16))
             },
             Err(error) => {
                 Err(AssemblerError::new_line(format!("Failed to parse immediate \"{}\": {}", immediate, error), self.line).into())
@@ -588,11 +594,14 @@ impl Assembler {
         let result = Self::parse_usize(location);
         match result {
             Ok(num) => {
-                if num > 1023 {
-                    return Err(AssemblerError::new_line(format!("Address {} out of range, expected 0-1023", num), self.line).into());
+                let result = Address::new(num as u16);
+                match result {
+                    Ok(address) => Ok(Location::Address(address)),
+                    Err(mut error) => {
+                        error.line = self.line;
+                        Err(error.into())
+                    }
                 }
-
-                Ok(Location::Address(Address::new(num as u16)))
             }
             Err(_) => {
                 Ok(Location::Label(location.to_string()))
@@ -614,11 +623,14 @@ impl Assembler {
         let result = Self::parse_i32(offset);
         match result {
             Ok(num) => {
-                if num < -8 || num > 7 {
-                    return Err(AssemblerError::new_line(format!("Offset {} out of range, expected -8-7", offset), self.line).into());
+                let result = Offset::new(num as i8);
+                match result {
+                    Ok(offset) => Ok(offset),
+                    Err(mut error) => {
+                        error.line = self.line;
+                        Err(error.into())
+                    }
                 }
-
-                Ok(Offset::new(num as i8))
             },
             Err(error) => {
                 Err(AssemblerError::new_line(format!("Failed to parse offset \"{}\": {}", offset, error), self.line).into())
