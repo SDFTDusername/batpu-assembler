@@ -7,27 +7,11 @@
 main:
   ldi PLR_X 15
   ldi PLR_Y 15
-  
-  // Initialize map
-  ldi MEM_ADDR 0
-  ldi r5 0b00000000; cal batch_map
-  ldi r5 0b00000000; cal batch_map
-  ldi r5 0b00000000; cal batch_map
-  ldi r5 0b01110001; cal batch_map
-  ldi r5 0b00000010; cal batch_map
-  ldi r5 0b00000100; cal batch_map
-  ldi r5 0b00001000; cal batch_map
-  ldi r5 0b11111111; cal batch_map
 
 loop:
   cal step
   cal render
   jmp loop
-
-batch_map:
-  str MEM_ADDR r5 0
-  inc MEM_ADDR
-  ret
 
 step:
   // Load controller data
