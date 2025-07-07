@@ -117,7 +117,7 @@ impl Assembler {
                 return Err(AssemblerError::new_line(format!("Label \"{}\" was already defined", label_name), self.line).into());
             }
 
-            self.labels.insert(label_name, Immediate::new(self.instructions.len() as u32)?);
+            self.labels.insert(label_name, Immediate::new(self.instructions.len() as u32));
             return Ok(None);
         }
 
@@ -281,14 +281,14 @@ impl Assembler {
                 self.check_arguments(args.len(), &["RegA"])?;
                 Instruction::AddImmediate(
                     self.get_register(args[1])?,
-                    Immediate::new(1)?
+                    Immediate::new(1)
                 )
             },
             "dec" => {
                 self.check_arguments(args.len(), &["RegA"])?;
                 Instruction::AddImmediate(
                     self.get_register(args[1])?,
-                    Immediate::new_signed(-1)?
+                    Immediate::new_signed(-1)
                 )
             },
             "not" => {
@@ -557,7 +557,7 @@ impl Assembler {
 
             return match char_index {
                 Some(index) => {
-                    Ok(Immediate::new(index as u32)?)
+                    Ok(Immediate::new(index as u32))
                 }
                 None => {
                     Err(AssemblerError::new_line(format!("Character \"{}\" is not supported, you can only use ones in \"{}\"", char, CHARACTERS.iter().collect::<String>()), self.line).into())
@@ -568,15 +568,7 @@ impl Assembler {
         let result = Self::parse_i32(immediate);
 
         match result {
-            Ok(num) => {
-                let result = Immediate::new_signed(num);
-                match result {
-                    Ok(immediate) => Ok(immediate),
-                    Err(error) => {
-                        Err(AssemblerError::from_assembly_error_line(&error, self.line).into())
-                    }
-                }
-            },
+            Ok(num) => Ok(Immediate::new_signed(num)),
             Err(error) => {
                 Err(AssemblerError::new_line(format!("Failed to parse immediate \"{}\": {}", immediate, error), self.line).into())
             }
