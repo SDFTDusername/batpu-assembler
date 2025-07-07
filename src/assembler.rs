@@ -117,7 +117,7 @@ impl Assembler {
                 return Err(AssemblerError::new_line(format!("Label \"{}\" was already defined", label_name), self.line).into());
             }
 
-            self.labels.insert(label_name, Immediate::new(self.instructions.len() as u32));
+            self.labels.insert(label_name, self.instructions.len() as u32);
             return Ok(None);
         }
 
