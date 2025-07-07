@@ -61,7 +61,8 @@ fn main() -> ExitCode {
     }
     
     if help || values.is_empty() {
-        println!("Usage: batpu-assembler [INPUT] [OUTPUT]
+        println!("batpu-assembler v0.0.1
+Usage: batpu-assembler [INPUT] [OUTPUT]
 -d, --disable-default-defines - Disables built-in defines, such as SCR_PIX_X
 -p, --no-print-info           - Do not print assembler info
 -t, --text-output             - Assemble to text file with binary representation");
