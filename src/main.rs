@@ -81,7 +81,7 @@ Usage: batpu-assembler [INPUT] [OUTPUT]
     
     let parse_result = assembler.parse_file(input_path);
     if let Err(errors) = parse_result {
-        eprintln!("Failed to parse \"{}\":", input_path);
+        eprintln!("Failed to assemble \"{}\":", input_path);
         for error in &errors {
             eprintln!("{}", error);
         }
