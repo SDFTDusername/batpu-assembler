@@ -8,7 +8,7 @@ use batpu_assembly::components::location::Location;
 use batpu_assembly::components::offset::Offset;
 use batpu_assembly::components::register::Register;
 use batpu_assembly::instruction::Instruction;
-use batpu_assembly::{instructions_to_binary, InstructionVec, Labels};
+use batpu_assembly::Labels;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
@@ -21,7 +21,7 @@ const CHARACTERS: &[char] = &[' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 
 pub struct Assembler {
     pub config: AssemblerConfig,
     
-    instructions: InstructionVec,
+    instructions: Vec<(Instruction, usize)>,
     labels: Labels,
     defines: HashMap<String, String>,
 
@@ -315,7 +315,7 @@ impl Assembler {
         Ok(Some(instruction))
     }
 
-    fn parse_line(&mut self, mut line: &str) -> Result<Vec<Instruction>, Vec<Box<dyn Error>>> {
+    fn parse_line(&mut self, mut line: &str) -> Result<Vec<(Instruction, usize)>, Vec<Box<dyn Error>>> {
         let mut errors = Vec::new();
         let mut instructions = Vec::new();
 
@@ -349,7 +349,7 @@ impl Assembler {
             match result {
                 Ok(instruction) => {
                     if let Some(instruction) = instruction {
-                        instructions.push(instruction);
+                        instructions.push((instruction, self.line));
                     }
                 },
                 Err(error) => {
@@ -405,10 +405,26 @@ impl Assembler {
     }
 
     pub fn assemble(&self) -> Result<Vec<u16>, Vec<AssemblyError>> {
-        let result = instructions_to_binary(&self.instructions, &self.labels);
-        
-        if result.is_err() {
-            return result;
+        let mut errors: Vec<AssemblyError> = Vec::new();
+
+        let binary = self.instructions
+            .iter()
+            .enumerate()
+            .map(|(i, (instruction, line))| {
+                let result = instruction.binary(i, &self.labels);
+                match result {
+                    Ok(binary) => binary,
+                    Err(mut error) => {
+                        error.line = *line;
+                        errors.push(error);
+                        0
+                    }
+                }
+            })
+            .collect();
+
+        if !errors.is_empty() {
+            return Err(errors);
         }
 
         if self.config.print_info {
@@ -419,7 +435,7 @@ impl Assembler {
             );
         }
         
-        result
+        Ok(binary)
     }
     
     pub fn assemble_to_file(&mut self, path: &str) -> Result<(), Vec<Box<dyn Error>>> {
